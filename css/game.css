@@ -203,6 +203,9 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 
 /* ------------------------------------------------------------------ cards */
 
+/* Fan geometry: pivot at the card's bottom center so tops spread apart and
+   earlier cards never sweep over the next card's corner; step 56px keeps a
+   26px+ exposed strip past the rank corner. */
 .hand-human {
   margin: 0;
   padding: 0;
@@ -227,6 +230,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   padding: 0;
   background: none;
   transform: translateY(calc(var(--dy) + var(--lift))) rotate(var(--rot));
+  transform-origin: 50% 100%;
   cursor: default;
 }
 .card:first-child { margin-left: 0; }
@@ -234,7 +238,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 .hand-human .card {
   width: var(--card-w-h);
   height: var(--card-h-h);
-  margin-left: -22px;
+  margin-left: -16px;
 }
 .hand-human .card:hover:not([disabled]),
 .hand-human .card:focus-visible:not([disabled]) { --lift: -16px; z-index: 9; }
@@ -498,7 +502,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 #action-bar {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--card-h-h) + 92px);
+  bottom: calc(var(--card-h-h) + 160px); /* clears the fanned hand top edge */
   transform: translateX(-50%);
   z-index: 21;
   display: flex;

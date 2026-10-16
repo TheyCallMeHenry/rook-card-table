@@ -175,13 +175,8 @@ export class RookGame {
   }
 
   // -------------------------------------------------------------- dealing
-
-  /** Fresh shuffled deck, same dealer: used by createGame and redeal (§9.4). Rotates only via nextHand(). */
-  deal() {
-    this._resetHand();
-    this._deal();
-    this.phase = 'pre_bid';
-  }
+  // First hand dealt by the constructor, later hands by nextHand(); no public
+  // deal() — an unguarded one would let callers wipe an in-flight hand.
 
   _deal() {
     const deck = shuffled(fullDeck(), this.rng);
@@ -319,15 +314,19 @@ export class RookGame {
     if (!this.nestTaken) throw new RookError('take the nest before discarding');
     if (this.nestDiscard) throw new RookError('already discarded');
     if (!Array.isArray(cards) || cards.length !== NEST_SIZE) throw new RookError(`must discard exactly ${NEST_SIZE} cards`);
+    // Atomic: validate the multiset against a copy before mutating the hand,
+    // so a duplicate spec can never half-discard and lose a card.
+    const pool = this.hands[seat].slice();
     const removed = [];
     for (const spec of cards) {
       const card = this._resolveCard(seat, spec);
       const id = cardId(card);
-      const idx = this.hands[seat].findIndex((c) => cardId(c) === id);
-      if (idx < 0) throw new RookError(`${id} not in seat ${seat}'s hand (already discarded?)`);
-      this.hands[seat].splice(idx, 1);
+      const idx = pool.findIndex((c) => cardId(c) === id);
+      if (idx < 0) throw new RookError(`${id} not in seat ${seat}'s hand (duplicate or already discarded?)`);
+      pool.splice(idx, 1);
       removed.push(card);
     }
+    this.hands[seat] = pool;
     this.nestDiscard = removed;
     dbg('discarded', { seat, ids: removed.map(cardId) });
   }
@@ -361,11 +360,7 @@ export class RookGame {
     const hand = this.hands[seat];
     if (this.trick.length === 0) return hand.slice();
     const led = this.trick[0].card;
-    if (led.suit === BIRD) {                       // bird is always trump; everyone plays a trump if able
-      const trumps = hand.filter((c) => c.suit === this.trumpSuit);
-      return trumps.length ? trumps : hand.slice();
-    }
-    if (led.suit === this.trumpSuit) {
+    if (led.suit === BIRD || led.suit === this.trumpSuit) {  // §9.2: bird is always trump — a bird lead forces trumps too
       const trumps = hand.filter((c) => c.suit === this.trumpSuit || c.suit === BIRD);
       return trumps.length ? trumps : hand.slice();
     }
@@ -439,6 +434,9 @@ export class RookGame {
    */
   declareRenee(seat = this.currentPlayer) {
     if (this.phase !== 'playing') throw new RookError('renees can only be declared during play');
+    if (!Number.isInteger(seat) || seat < 0 || seat > 3) throw new RookError('bad rennee seat');
+    if (this.reneeSeat !== null) throw new RookError('only one rennee declaration per hand');
+    if (this.trick.length === 0 && this.tricks.length === 0) throw new RookError('nothing has been played to rennee');
     this.reneeSeat = seat;
     dbg('rene declared', { seat });
     this._settle({ rene: true });
@@ -479,7 +477,9 @@ export class RookGame {
       contractSeat: this.contract.seat,
       lastTrickTaker: this.lastTrickTaker,
     };
-    this.winner = this._checkGameEnd();
+    // §9.13: game-end is evaluated only after a COMPLETE hand — a renée-stopped
+    // hand changes scores but cannot itself end the game.
+    this.winner = rene ? null : this._checkGameEnd();
     this.phase = this.winner === null ? 'hand_over' : 'game_over';
     dbg('settled', this.lastHandResult.outcome, { scores: this.scores, winner: this.winner });
   }

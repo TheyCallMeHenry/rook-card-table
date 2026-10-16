@@ -3,7 +3,7 @@
  * Engine is never modified: every engine call goes through tryEngine(),
  * which turns a RookError into an announcement instead of an exception.
  */
-import { createGame, cardId, parseCard, cardCounters, setDebug } from './engine.js';
+import { createGame, cardId, parseCard, cardCounters, setDebug, SUITS, BIRD } from './engine.js';
 import { decideBid, decideContract, decidePlay } from './ai.js';
 import * as UI from './ui.js';
 import * as Sfx from './audio.js';
@@ -29,6 +29,8 @@ let nestIds = new Set();
 let settleShownFor = -1;
 let gameOverShown = false;
 let lastPhase = null;
+let aiFailStreak = 0;               // consecutive AI/fallback failures; >=8 stops the pump (Review B #1/#2)
+let deferrals = [];                 // pending cosmetic timers (deal SFX, delayed renders) cleared on re-entry (Review B #4/#5)
 
 /* ------------------------------------------------------------ engine gate */
 
@@ -48,7 +50,24 @@ function tryEngine(fn, label) {
   }
 }
 
-const handIds = (seat) => g.hands[seat].map(cardId);
+const handIds = (seat) => {
+  const ids = g.hands[seat].map(cardId);
+  // Display order (seat 0 only; engine order untouched — all actions use card ids):
+  // group by suit, highest first; bird last; when trump is fixed, trump group sits rightmost.
+  if (seat !== HUMAN) return ids;
+  const trump = g.trumpSuit;
+  const SUIT_ORDER = trump ? [...SUITS.filter((s) => s !== trump), trump] : SUITS;
+  const key = (id) => {
+    const { suit, rank } = parseCard(id);
+    if (suit === BIRD) return [SUIT_ORDER.length + 1, 99];
+    return [SUIT_ORDER.indexOf(suit), -rank];
+  };
+  return ids.sort((a, b) => {
+    const [sa, ra] = key(a);
+    const [sb, rb] = key(b);
+    return sa !== sb ? sa - sb : ra - rb;
+  });
+};
 const tricksWonTotal = () => g.snapshot().tricksWon.reduce((a, b) => a + b, 0);
 
 /* --------------------------------------------------------------- rendering */
@@ -155,10 +174,15 @@ function advance() {
 }
 
 function tick() {
-  if (busy) return;
+  if (busy) { pumpTimer = setTimeout(tick, AI_MS); return; }  // re-arm: never silently drop the chain (Review B #3)
+  if (aiFailStreak >= 8) {
+    console.debug('[rook]', 'AI pump stopped after repeated failures');
+    UI.announce('The computer players are stuck. Use New game (or reload) to restart.');
+    return;
+  }
   const snap = g.snapshot();
   if (snap.phase === 'bidding' && (AUTOPLAY || snap.currentBidder !== HUMAN)) return aiBid(snap.currentBidder);
-  if (snap.phase === 'contract_setup' && (AUTOPLAY || snap.contract.seat !== HUMAN)) return aiContractStep(snap.contract.seat);
+  if (snap.phase === 'contract_setup' && Boolean(snap.contract) && (AUTOPLAY || snap.contract.seat !== HUMAN)) return aiContractStep(snap.contract.seat);
   if (snap.phase === 'playing' && (AUTOPLAY || snap.currentPlayer !== HUMAN)) return aiPlay(snap.currentPlayer);
   advance();
 }
@@ -167,15 +191,18 @@ function tick() {
 
 function aiBid(seat) {
   const d = decideBid(g, seat);
-  let ok;
+  let ok = false;
   if (d.action === 'bid') {
     ok = tryEngine(() => g.bid(seat, d.amount), 'ai-bid');
     if (ok) { UI.announce(`${UI.SEAT_NAMES[seat]} bids ${d.amount}.`); Sfx.flip(); }
-  } else {
+  }
+  // Passing is always legal for the seat to act, so a rejected bid can never freeze the chain.
+  if (!ok) {
     ok = tryEngine(() => g.pass(seat), 'ai-pass');
     if (ok) UI.announce(`${UI.SEAT_NAMES[seat]} passes.`);
   }
-  if (ok) advance();
+  if (ok) aiFailStreak = 0; else aiFailStreak++;
+  advance();
 }
 
 function aiContractStep(seat) {
@@ -193,15 +220,50 @@ function aiContractStep(seat) {
     ok = tryEngine(() => g.callTrump(seat, d.suit), 'ai-trump');
     if (ok) Sfx.flip();
   }
-  if (!ok) { advance(); return; }
-  UI.announce(msg);
+  if (!ok) {
+    // Deterministic fallback driven by the engine's own legalMoves flags: always a legal
+    // sub-step, so the pump can never spin forever on the same bad AI decision.
+    ok = aiContractFallback(seat);
+    if (ok) UI.announce(`${name} makes a safe contract move.`);
+  }
+  if (ok) aiFailStreak = 0; else aiFailStreak++;
+  if (msg && ok) UI.announce(msg);  // tryEngine already announces failures itself
   advance();
+}
+
+function aiContractFallback(seat) {
+  let mv;
+  try { mv = g.legalMoves(seat); } catch (e) { return false; }
+  if (mv.needsTakeNest) return tryEngine(() => g.takeNest(seat), 'ai-fallback-nest');
+  if (mv.needsDiscard) {
+    const five = g.hands[seat].slice().sort((a, b) => cardCounters(a) - cardCounters(b)).slice(0, 5).map(cardId);
+    return tryEngine(() => g.discard(seat, five), 'ai-fallback-discard');  // shed lowest-counter cards
+  }
+  if (mv.needsTrump) return tryEngine(() => g.callTrump(seat, fallbackTrump(seat)), 'ai-fallback-trump');
+  return false;
+}
+
+function fallbackTrump(seat) {
+  const count = {};
+  for (const c of g.hands[seat]) if (c.suit !== BIRD) count[c.suit] = (count[c.suit] || 0) + 1;
+  let best = SUITS[0];
+  let bestN = -1;
+  for (const s of SUITS) { const n = count[s] || 0; if (n > bestN) { best = s; bestN = n; } }
+  return best; // longest suit; ties favour the first suit — pure safety net, not strategy
 }
 
 function aiPlay(seat) {
   const d = decidePlay(g, seat);
-  if (!d || !d.card) { advance(); return; }
-  playCardFlow(seat, d.card);
+  let card = d && d.card ? d.card : null;
+  if (!card) {
+    // Fallback: the engine's own first legal card guarantees trick progress.
+    try {
+      const mv = g.legalMoves(seat);
+      card = mv.cards && mv.cards.length ? mv.cards[0] : null;
+    } catch (e) { card = null; }
+  }
+  if (!card) { aiFailStreak++; advance(); return; }
+  playCardFlow(seat, card);
 }
 
 /* ------------------------------------------------------------------- play */
@@ -210,7 +272,8 @@ function playCardFlow(seat, id) {
   if (busy) return;
   const before = g.snapshot().tricksWon.slice();
   const beforeSum = before.reduce((a, b) => a + b, 0);
-  if (!tryEngine(() => g.playCard(seat, id), 'play')) { advance(); return; }
+  if (!tryEngine(() => g.playCard(seat, id), 'play')) { aiFailStreak++; advance(); return; }
+  aiFailStreak = 0;
   Sfx.flip();
   trickIds.push(id);
   const node = UI.placeTrickCard(seat, id);
@@ -284,7 +347,7 @@ function onTakeNest() {
   let nest = null;
   if (!tryEngine(() => { nest = g.takeNest(HUMAN); }, 'take-nest')) return;
   nestIds = new Set((nest || []).map(cardId));
-  for (let i = 0; i < 5; i++) setTimeout(() => Sfx.dealFlick(), i * 90);
+  for (let i = 0; i < 5; i++) defer(() => Sfx.dealFlick(), i * 90);
   const names = (nest || []).map((c) => UI.cardLabel(cardId(c))).join(', ');
   UI.announce(`Nest in hand: ${names}. Now pick exactly 5 cards to discard.`);
   advance();
@@ -339,6 +402,8 @@ function maybeEndScreens(snap) {
 function onNextHand() {
   UI.hideOverlays();
   if (!tryEngine(() => g.nextHand(), 'next-hand')) return;
+  clearTimeout(pumpTimer);
+  clearDeferrals();
   resetTrickState();
   animateHandIn();
   advance();
@@ -357,22 +422,34 @@ function resetTrickState() {
 
 /* ------------------------------------------------------------------ deal */
 
+function defer(fn, ms) {
+  const t = setTimeout(() => { deferrals = deferrals.filter((x) => x !== t); fn(); }, ms);
+  deferrals.push(t);
+}
+function clearDeferrals() {
+  for (const t of deferrals) clearTimeout(t);
+  deferrals = [];
+}
+
 function animateHandIn() {
   for (const s of [1, 2, 3]) UI.renderBacks(s, g.hands[s].length, true);
   UI.renderHumanHand(handIds(HUMAN), { interactive: false, deal: true });
-  for (let i = 0; i < 13; i++) setTimeout(() => Sfx.dealFlick(), i * DEAL_STAGGER + DEAL_STAGGER);
+  for (let i = 0; i < 13; i++) defer(() => Sfx.dealFlick(), i * DEAL_STAGGER + DEAL_STAGGER);
 }
 
 function initGame() {
+  clearTimeout(pumpTimer);
+  clearDeferrals();
   g = createGame(SEED === null ? { target: 150 } : { target: 150, seed: SEED });
   settleShownFor = -1;
   gameOverShown = false;
   lastPhase = null;
+  aiFailStreak = 0;
   resetTrickState();
   UI.hideOverlays();
   UI.updateHud(g.snapshot());
   animateHandIn();
-  setTimeout(() => {
+  defer(() => {
     render();
     UI.announce('Cards dealt. Look over your hand, then begin bidding.');
   }, DEAL_TOTAL);
