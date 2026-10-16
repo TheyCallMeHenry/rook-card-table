@@ -168,7 +168,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 .tag-dealer { background: var(--gold); }
-.tag-passed { background: #8d8269; color: #fff; }
+.tag-passed { background: #5f5439; color: #fff; }
 .tag-bid { background: #ffe9a8; }
 
 .seat-hand {
@@ -266,11 +266,11 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
-.card-face::after {           /* subtle inner sheen */
+.card-face::after {           /* subtle inner sheen — kept off the top-left rank corner */
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(255, 255, 255, 0.35), transparent 40%);
+  background: linear-gradient(300deg, rgba(255, 255, 255, 0.30), transparent 45%);
   pointer-events: none;
 }
 
@@ -362,8 +362,17 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 
 /* disabled (not a legal play) */
 .card[disabled] { cursor: not-allowed; }
-.card--dim .card-face { filter: saturate(0.35) brightness(0.72); }
-.card--dim { opacity: 0.75; }
+.card--dim { opacity: 0.92; }
+/* Tint overlay sits BETWEEN felt-background and the rank/counter text (z-index 2):
+   the card face reads clearly inactive, but the numbers keep full contrast. */
+.card--dim .card-face::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(10, 24, 12, 0.34), rgba(8, 18, 8, 0.46));
+}
 
 .card--sel .card-face {
   outline: 3px solid var(--gold);
@@ -405,6 +414,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   transform-origin: 50% 50%;
   animation: trickIn 0.22s ease both;
 }
+.trick-card .rank { font-size: 19px; }   /* center-of-table ranks are scanned at a glance */
 .trick-card[data-seat="0"] { transform: translate(-50%, 60px); }
 .trick-card[data-seat="1"] { transform: translate(60px, -50%) rotate(90deg); }
 .trick-card[data-seat="2"] { transform: translate(-50%, calc(-100% - 60px)); }
