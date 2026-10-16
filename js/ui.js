@@ -481,3 +481,15 @@ export function setMuteButton(isMuted) {
   btn.textContent = isMuted ? 'Sound: off' : 'Sound: on';
   btn.setAttribute('aria-pressed', String(isMuted));
 }
+
+/* ------------------------------------------------------------ fit canvas */
+
+// The stage is a fixed 1360×820 scene; scale it to whatever screen appears.
+const SCENE_W = 1360;
+const SCENE_H = 820;
+function fitScene() {
+  const f = Math.min(window.innerWidth / SCENE_W, window.innerHeight / SCENE_H);
+  document.documentElement.style.setProperty('--fit', String(f));
+}
+window.addEventListener('resize', fitScene, { passive: true });
+fitScene();
