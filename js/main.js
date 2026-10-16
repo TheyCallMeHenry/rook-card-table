@@ -484,7 +484,7 @@ const openRules = () => {
   rulesClaimedBusy = !busy;          // don't co-opt an in-flight trick/animation pause
   if (rulesClaimedBusy) busy = true;
   rulesEl.classList.remove('hidden');
-  rulesCloseBtn.focus();
+  rulesCloseBtn.focus({ preventScroll: true });  // dialog should open at its TOP, not jump to the button
 };
 const closeRules = () => {
   if (rulesEl.classList.contains('hidden')) return;
@@ -502,3 +502,4 @@ document.getElementById('play-again-btn').addEventListener('click', () => {
 
 // fold hand/game screens into the render loop
 initGame();
+if (PARAMS.has('showrules')) openRules();   // hidden QA hook (after initGame, whose hideOverlays would close it)

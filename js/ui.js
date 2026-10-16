@@ -485,11 +485,21 @@ export function setMuteButton(isMuted) {
 /* ------------------------------------------------------------ fit canvas */
 
 // The stage is a fixed 1360×820 scene; scale it to whatever screen appears.
+// On short landscape viewports (phones/small tablets) that scaling would render text
+// under ~9 px, so we swap in an 840×400 compact scene (fit ≈ 1) instead — the CSS
+// block keyed on html.compact re-flows the same DOM. Evidence: docs/fit-viewport-research-2026-10-16.md.
 const SCENE_W = 1360;
 const SCENE_H = 820;
+const COMPACT_W = 840;
+const COMPACT_H = 400;
+const mqCompact = window.matchMedia('(orientation: landscape) and (max-height: 680px)');
 function fitScene() {
-  const f = Math.min(window.innerWidth / SCENE_W, window.innerHeight / SCENE_H);
+  const compact = mqCompact.matches;
+  document.documentElement.classList.toggle('compact', compact);
+  const f = Math.min(window.innerWidth / (compact ? COMPACT_W : SCENE_W),
+                     window.innerHeight / (compact ? COMPACT_H : SCENE_H));
   document.documentElement.style.setProperty('--fit', String(f));
 }
 window.addEventListener('resize', fitScene, { passive: true });
+mqCompact.addEventListener('change', fitScene);
 fitScene();

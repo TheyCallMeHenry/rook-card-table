@@ -593,7 +593,9 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 
 .overlay-panel {
   width: 560px;
-  max-height: 700px;
+  width: min(560px, calc(100svw - 24px));
+  max-height: calc(100vh - 24px);
+  max-height: calc(100svh - 24px);   /* never taller than the real viewport (WHATWG UA-sheet shape) */
   overflow-y: auto;
   padding: 26px 30px;
   border-radius: 16px;
@@ -620,6 +622,69 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 .settle-table td.pos { color: #9fe0ac; font-weight: 800; }
 .settle-table td.neg { color: #f0a3a3; font-weight: 800; }
 .settle-note { margin: 6px 0 16px; font-size: 18px; color: var(--text-dim); }
+
+/* ---------------------------------------------------------------- compact
+   Compact landscape scene for phones/short viewports: JS adds html.compact
+   (landscape, max-height 680px) and fitScene scales an 840×400 scene at ≈1:1,
+   so type and touch targets render at true CSS px (WCAG 2.2 AA ≥24 css px).
+   Same DOM as the desktop scene: the HUD re-flows into a slim top strip. */
+html.compact { --card-h: 58px; --card-w: 41px; --card-h-h: 70px; --card-w-h: 49px; }
+html.compact .stage { width: 840px; height: 400px; }
+
+html.compact #hud {
+  flex: 0 0 auto;
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 58px;
+  display: flex; flex-direction: row; align-items: center;
+  gap: 10px; padding: 6px 12px;
+  background: linear-gradient(180deg, #241a10f0, #171310cc 80%, #17131000);
+  border-left: none; box-shadow: none;
+  z-index: 30;
+}
+html.compact .hud-title, html.compact .hud-sub, html.compact .trick-log,
+html.compact .hud-hint, html.compact .score-bar { display: none; }
+html.compact .hud-hand { margin: 0; font-size: 14px; white-space: nowrap; }
+html.compact .score-card { margin: 0; padding: 3px 8px; }
+html.compact .score-team { font-size: 12px; }
+html.compact .score-num { font-size: 18px; }
+html.compact .contract-badges { margin: 0; gap: 6px; }
+html.compact .badge { font-size: 12px; padding: 3px 8px; gap: 4px; }
+html.compact .btn-mute { width: auto; margin: 0; padding: 7px 10px; font-size: 13px; }
+html.compact #mute-btn { margin-left: auto; }
+html.compact .seat-label { font-size: 13px; gap: 5px; }
+html.compact .seat-tag { font-size: 12px; }
+html.compact .seat { gap: 3px; }
+html.compact .seat-top { top: 6px; }
+html.compact .seat-bottom { bottom: 4px; }
+html.compact .seat-left { left: 18px; }
+html.compact .seat-right { right: 18px; }
+html.compact .table { width: 764px; height: 330px; padding: 20px; }
+html.compact .table::before { inset: 20px; }
+html.compact .back { margin-left: -28px; }
+html.compact .hand-human .card { margin-left: -12px; }
+html.compact .trick-card .rank { font-size: 16px; }
+html.compact .trick-card[data-seat="0"] { transform: translate(-50%, 40px); }
+html.compact .trick-card[data-seat="1"] { transform: translate(40px, -50%) rotate(90deg); }
+html.compact .trick-card[data-seat="2"] { transform: translate(-50%, calc(-100% - 40px)); }
+html.compact .trick-card[data-seat="3"] { transform: translate(calc(-100% - 40px), -50%) rotate(-90deg); }
+html.compact #announce { top: 62px; padding: 6px 14px; font-size: 15px; max-width: 560px; }
+html.compact #action-bar { bottom: calc(var(--card-h-h) + 86px); gap: 6px; }
+html.compact .panel { padding: 8px 10px; gap: 6px; }
+html.compact .panel-title { font-size: 15px; }
+html.compact .panel-note { font-size: 14px; max-width: 430px; text-align: center; }
+html.compact .btn { padding: 8px 12px; font-size: 15px; }
+html.compact .bid-grid .btn { min-width: 58px; padding: 8px 8px; }
+html.compact .rank { font-size: 15px; }
+html.compact .hand-human .rank { font-size: 17px; }
+html.compact .corner .svg-suit { width: 12px; height: 12px; }
+html.compact .glyph .svg-suit { width: 26px; height: 26px; }
+html.compact .hand-human .glyph .svg-suit { width: 32px; height: 32px; }
+html.compact .counter-tag { min-width: 20px; font-size: 12px; padding: 1px 4px; }
+html.compact .pile-badge { font-size: 13px; min-width: 26px; padding: 1px 8px; }
+html.compact .overlay-title { font-size: 24px; margin-bottom: 10px; }
+html.compact .rules-body { font-size: 15px; }
+html.compact #rules-close-btn, html.compact #next-hand-btn, html.compact #play-again-btn { padding: 9px 16px; }
 
 /* ---------------------------------------------------------------- a11y */
 
