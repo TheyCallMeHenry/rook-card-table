@@ -493,7 +493,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   font-size: 18px;
   font-weight: 800;
 }
-.badge--empty { border-color: #6b522e; color: var(--text-dim); }
+.badge--empty { display: none; }   /* no trump called yet → no ghost pill (empty text still had badge padding) */
 .badge .pill-glyph { display: inline-flex; }
 .badge--trump.s-R .svg-suit { color: var(--red-s); }
 .badge--trump.s-Y .svg-suit { color: var(--gold-s); }
