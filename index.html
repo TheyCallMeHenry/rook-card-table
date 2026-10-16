@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rook — Card Table</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div class="stage">
+    <div class="table-wrap">
+      <div id="announce" role="status" aria-live="polite">Welcome to the Rook table.</div>
+
+      <div class="table" aria-label="Rook table">
+        <!-- top: partner (seat 2) -->
+        <div id="seat-2" class="seat seat-top" data-seat="2">
+          <div class="seat-label"><span class="seat-name">Partner</span><span class="seat-tag" data-tag="2"></span></div>
+          <div class="seat-hand" data-backs="2"></div>
+          <div class="seat-pile"><span class="pile-badge" data-pile="2" title="Tricks won">0</span></div>
+        </div>
+        <!-- right: opponent (seat 1) -->
+        <div id="seat-1" class="seat seat-right" data-seat="1">
+          <div class="seat-label"><span class="seat-name">Opponent R</span><span class="seat-tag" data-tag="1"></span></div>
+          <div class="seat-hand" data-backs="1"></div>
+          <div class="seat-pile"><span class="pile-badge" data-pile="1" title="Tricks won">0</span></div>
+        </div>
+        <!-- left: opponent (seat 3) -->
+        <div id="seat-3" class="seat seat-left" data-seat="3">
+          <div class="seat-label"><span class="seat-name">Opponent L</span><span class="seat-tag" data-tag="3"></span></div>
+          <div class="seat-hand" data-backs="3"></div>
+          <div class="seat-pile"><span class="pile-badge" data-pile="3" title="Tricks won">0</span></div>
+        </div>
+
+        <div id="trick-area" aria-label="Current trick"></div>
+
+        <!-- bottom: human (seat 0) -->
+        <div id="seat-0" class="seat seat-bottom" data-seat="0">
+          <div class="seat-pile"><span class="pile-badge" data-pile="0" title="Tricks won">0</span></div>
+          <div id="hand-0" class="hand hand-human" aria-label="Your hand"></div>
+          <div class="seat-label"><span class="seat-name">You</span><span class="seat-tag" data-tag="0"></span></div>
+        </div>
+      </div>
+
+      <div id="action-bar" aria-label="Game actions"></div>
+    </div>
+
+    <aside id="hud" aria-label="Game status">
+      <h1 class="hud-title">ROOK</h1>
+      <div class="hud-hand" id="hand-number">Hand 1 · first to 150</div>
+      <div class="score-card team-you">
+        <div class="score-team">You &amp; Partner</div>
+        <div class="score-num" id="score-0">0</div>
+        <div class="score-bar"><div class="score-fill" id="bar-0"></div></div>
+      </div>
+      <div class="score-card team-opp">
+        <div class="score-team">Opponents</div>
+        <div class="score-num" id="score-1">0</div>
+        <div class="score-bar"><div class="score-fill" id="bar-1"></div></div>
+      </div>
+      <div class="contract-badges" id="contract-badges">
+        <span class="badge" id="badge-bid">No bid yet</span>
+        <span class="badge" id="badge-trump"></span>
+      </div>
+      <h2 class="hud-sub">Last tricks</h2>
+      <ol id="trick-log" class="trick-log" aria-label="Last three trick results"></ol>
+      <button id="mute-btn" class="btn btn-ghost btn-mute" type="button" aria-pressed="false">Sound: on</button>
+      <p class="hud-hint">Tip: golden pips mark counter cards (5s, 10s, 14s, bird = points).</p>
+    </aside>
+  </div>
+
+  <div id="settlement" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Hand settlement">
+    <div class="overlay-panel">
+      <h2 class="overlay-title" id="settlement-title">Hand over</h2>
+      <div id="settlement-body"></div>
+      <button id="next-hand-btn" class="btn" type="button">Deal next hand</button>
+    </div>
+  </div>
+
+  <div id="winner" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Game over">
+    <div class="overlay-panel overlay-win">
+      <h2 class="overlay-title" id="winner-title">Game over</h2>
+      <div id="winner-body"></div>
+      <button id="play-again-btn" class="btn" type="button">Play again</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
