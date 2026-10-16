@@ -15,10 +15,26 @@ const AUTOPLAY = PARAMS.has('autoplay');   // seat 0 takes the exact AI-seat cod
 const FAST = PARAMS.has('fast');           // ~80 ms AI pacing, ~10 ms deal stagger
 const rawSeed = PARAMS.has('seed') ? Number(PARAMS.get('seed')) : null;
 const SEED = rawSeed !== null && Number.isFinite(rawSeed) ? rawSeed : null;
-const AI_MS = FAST ? 80 : 700;             // pause between any two AI decisions
-const TRICK_LINGER = FAST ? 700 : 1700;    // all four played cards stay face-up on the table this long
-const DEAL_STAGGER = FAST ? 10 : 40;       // deal stagger in ms/card
-const DEAL_TOTAL = 13 * DEAL_STAGGER + 320; // deal stagger + tail
+// Speed of play: HUD "Speed" menu, persisted in localStorage; QA override ?speed=slow|normal|instant.
+const SPEED_KEY = 'rook.speed';
+const SPEED_MODES = ['slow', 'normal', 'instant'];
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* private mode: session-only speed */ } };
+let speedMode = SPEED_MODES.includes((PARAMS.get('speed') || '').toLowerCase())
+  ? (PARAMS.get('speed') || '').toLowerCase()
+  : (SPEED_MODES.includes(lsGet(SPEED_KEY)) ? lsGet(SPEED_KEY) : 'normal');
+// JS-side pacing, recomputed by applySpeed(); FAST keeps the exact test-harness timings.
+const T = { ai: 700, linger: 1700, stagger: 40, tail: 320, fly: 480 };
+function applySpeed() {
+  const mult = speedMode === 'slow' ? 3 : 1;
+  const instant = speedMode === 'instant';
+  document.documentElement.classList.toggle('instant', instant);
+  T.ai = FAST ? 80 : 700 * mult;         // pause between any two AI decisions
+  T.linger = FAST ? 700 : 1700 * mult;   // all four played cards stay face-up on the table this long
+  T.stagger = FAST ? 10 : (instant ? 0 : 40 * mult); // deal stagger in ms/card
+  T.tail = instant ? 0 : 320;          // deal animation tail (same under FAST, as before)
+  T.fly = instant ? 0 : 480;             // trick-card fly-out animation
+}
 
 let g = null;
 let pumpTimer = null;
@@ -165,7 +181,7 @@ function pumpIfAi() {
   if (snap.phase === 'bidding') aiTurn = AUTOPLAY || snap.currentBidder !== HUMAN;
   else if (snap.phase === 'contract_setup') aiTurn = AUTOPLAY || (Boolean(snap.contract) && snap.contract.seat !== HUMAN);
   else if (snap.phase === 'playing') aiTurn = AUTOPLAY || snap.currentPlayer !== HUMAN;
-  if (aiTurn) pumpTimer = setTimeout(tick, AI_MS);
+  if (aiTurn) pumpTimer = setTimeout(tick, T.ai);
 }
 
 function advance() {
@@ -175,7 +191,7 @@ function advance() {
 }
 
 function tick() {
-  if (busy) { pumpTimer = setTimeout(tick, AI_MS); return; }  // re-arm: never silently drop the chain (Review B #3)
+  if (busy) { pumpTimer = setTimeout(tick, T.ai); return; }  // re-arm: never silently drop the chain (Review B #3)
   if (aiFailStreak >= 8) {
     console.debug('[rook]', 'AI pump stopped after repeated failures');
     UI.announce('The computer players are stuck. Use New game (or reload) to restart.');
@@ -304,11 +320,11 @@ function resolveTrick(winner) {
   trickNodes = [];
   // Linger: keep all four cards visible face-up long enough to read the whole trick.
   setTimeout(() => {
-    Promise.all(nodes.map((n) => UI.collectTrick(n, winner))).then(() => {
+    Promise.all(nodes.map((n) => UI.collectTrick(n, winner, T.fly))).then(() => {
       busy = false;
       advance();
     });
-  }, TRICK_LINGER);
+  }, T.linger);
 }
 
 /* --------------------------------------------------------- human actions */
@@ -437,8 +453,10 @@ function clearDeferrals() {
 
 function animateHandIn() {
   for (const s of [1, 2, 3]) UI.renderBacks(s, g.hands[s].length, true);
-  UI.renderHumanHand(handIds(HUMAN), { interactive: false, deal: true });
-  for (let i = 0; i < 13; i++) defer(() => Sfx.dealFlick(), i * DEAL_STAGGER + DEAL_STAGGER);
+  UI.renderHumanHand(handIds(HUMAN), { interactive: false, deal: speedMode !== 'instant' });
+  if (speedMode !== 'instant') {
+    for (let i = 0; i < 13; i++) defer(() => Sfx.dealFlick(), i * T.stagger + T.stagger);
+  }
 }
 
 function initGame() {
@@ -456,7 +474,7 @@ function initGame() {
   defer(() => {
     render();
     UI.announce('Cards dealt. Look over your hand, then begin bidding.');
-  }, DEAL_TOTAL);
+  }, 13 * T.stagger + T.tail);
 }
 
 /* ------------------------------------------------------------------ boot */
@@ -481,6 +499,7 @@ const rulesCloseBtn = document.getElementById('rules-close-btn');
 let rulesClaimedBusy = false;
 const openRules = () => {
   if (!rulesEl.classList.contains('hidden')) return;
+  if (typeof closeSpeed === 'function' && !speedEl.classList.contains('hidden')) closeSpeed();  // one dialog at a time
   rulesClaimedBusy = !busy;          // don't co-opt an in-flight trick/animation pause
   if (rulesClaimedBusy) busy = true;
   rulesEl.classList.remove('hidden');
@@ -495,6 +514,49 @@ document.getElementById('rules-btn').addEventListener('click', openRules);
 rulesCloseBtn.addEventListener('click', closeRules);
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRules(); });
 
+/* speed dialog — same open→pause / close→resume pattern as the rules dialog */
+const speedEl = document.getElementById('speed');
+const speedBtn = document.getElementById('speed-btn');
+const speedCloseBtn = document.getElementById('speed-close-btn');
+let speedClaimedBusy = false;
+function refreshSpeedUI() {
+  speedBtn.textContent = `Speed: ${speedMode}`;
+  for (const b of speedEl.querySelectorAll('[data-speed]')) {
+    const on = b.dataset.speed === speedMode;
+    b.classList.toggle('speed-on', on);
+    b.setAttribute('aria-pressed', String(on));
+  }
+}
+function chooseSpeed(mode) {
+  if (!SPEED_MODES.includes(mode)) return;
+  speedMode = mode;
+  lsSet(SPEED_KEY, mode);
+  applySpeed();
+  refreshSpeedUI();
+}
+const openSpeed = () => {
+  if (!speedEl.classList.contains('hidden')) return;
+  closeRules();                        // only one dialog at a time
+  speedClaimedBusy = !busy;
+  if (speedClaimedBusy) busy = true;
+  speedEl.classList.remove('hidden');
+  refreshSpeedUI();
+  (speedEl.querySelector('.speed-on') || speedCloseBtn).focus({ preventScroll: true });
+};
+const closeSpeed = () => {
+  if (speedEl.classList.contains('hidden')) return;
+  speedEl.classList.add('hidden');
+  if (speedClaimedBusy) { busy = false; speedClaimedBusy = false; advance(); }
+};
+speedBtn.addEventListener('click', openSpeed);
+speedCloseBtn.addEventListener('click', closeSpeed);
+for (const b of speedEl.querySelectorAll('[data-speed]')) {
+  b.addEventListener('click', () => chooseSpeed(b.dataset.speed));
+}
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSpeed(); });
+applySpeed();
+refreshSpeedUI();
+
 document.getElementById('play-again-btn').addEventListener('click', () => {
   UI.hideOverlays();
   initGame();
@@ -503,3 +565,4 @@ document.getElementById('play-again-btn').addEventListener('click', () => {
 // fold hand/game screens into the render loop
 initGame();
 if (PARAMS.has('showrules')) openRules();   // hidden QA hook (after initGame, whose hideOverlays would close it)
+if (PARAMS.has('showspeed')) openSpeed();   // hidden QA hook: speed menu screenshot

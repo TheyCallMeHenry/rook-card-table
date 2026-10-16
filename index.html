@@ -66,6 +66,7 @@
       <ol id="trick-log" class="trick-log" aria-label="Last three trick results"></ol>
       <button id="mute-btn" class="btn btn-ghost btn-mute" type="button" aria-pressed="false">Sound: on</button>
       <button id="rules-btn" class="btn btn-ghost btn-mute" type="button" aria-haspopup="dialog">How to play</button>
+      <button id="speed-btn" class="btn btn-ghost btn-mute" type="button" aria-haspopup="dialog">Speed: normal</button>
       <p class="hud-hint">Tip: golden pips mark counter cards (5s, 10s, 14s, bird = points).</p>
     </aside>
   </div>
@@ -100,6 +101,21 @@
         <p><b>Tip.</b> The panel under the table always offers exactly your legal moves, and the golden tag on a card shows what it's worth.</p>
       </div>
       <button id="rules-close-btn" class="btn" type="button">Back to the table</button>
+    </div>
+  </div>
+
+  <div id="speed" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Speed of play">
+    <div class="overlay-panel">
+      <h2 class="overlay-title">Speed of play</h2>
+      <div class="speed-body">
+        <p>Slower gives you more time to follow every card. Instant skips the animations but keeps the same pacing. Your choice is remembered on this device.</p>
+        <div class="speed-choices">
+          <button type="button" class="btn speed-btn" data-speed="slow" aria-pressed="false">Slow — about 3× more time to watch each play</button>
+          <button type="button" class="btn speed-btn" data-speed="normal" aria-pressed="false">Normal — the current speed</button>
+          <button type="button" class="btn speed-btn" data-speed="instant" aria-pressed="false">Instant — no animations, same pacing</button>
+        </div>
+      </div>
+      <button id="speed-close-btn" class="btn" type="button">Back to the table</button>
     </div>
   </div>
 

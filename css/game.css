@@ -611,6 +611,14 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 .rules-body p { margin: 0 0 12px; }
 .rules-body b { color: var(--gold); }
 
+/* speed dialog */
+.speed-body { margin-bottom: 4px; }
+.speed-body p { margin: 0 0 14px; font-size: 18px; color: var(--text-dim); }
+.speed-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.speed-btn { font-size: 18px; padding: 12px 16px; }
+.speed-on { background: linear-gradient(180deg, #3d2c16, #241708); color: var(--gold); border-color: var(--gold); box-shadow: 0 3px 0 #00000066, 0 0 0 2px var(--gold-dim), inset 0 1px 0 #ffffff22; font-weight: 900; }
+html.compact .speed-btn { font-size: 15px; padding: 9px 14px; }
+
 .settle-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
 .settle-table th, .settle-table td {
   padding: 7px 10px;
@@ -655,7 +663,7 @@ html.compact #mute-btn { margin-left: auto; }
 html.compact .seat-label { font-size: 13px; gap: 5px; }
 html.compact .seat-tag { font-size: 12px; }
 html.compact .seat { gap: 3px; }
-html.compact .seat-top { top: 6px; }
+html.compact .seat-top { top: 30px; }   /* label clears the 58px HUD strip (was clipped by the contract chips) */
 html.compact .seat-bottom { bottom: 4px; }
 html.compact .seat-left { left: 18px; }
 html.compact .seat-right { right: 18px; }
@@ -664,12 +672,17 @@ html.compact .table::before { inset: 20px; }
 html.compact .back { margin-left: -28px; }
 html.compact .hand-human .card { margin-left: -12px; }
 html.compact .trick-card .rank { font-size: 16px; }
-html.compact .trick-card[data-seat="0"] { transform: translate(-50%, 40px); }
-html.compact .trick-card[data-seat="1"] { transform: translate(40px, -50%) rotate(90deg); }
-html.compact .trick-card[data-seat="2"] { transform: translate(-50%, calc(-100% - 40px)); }
-html.compact .trick-card[data-seat="3"] { transform: translate(calc(-100% - 40px), -50%) rotate(-90deg); }
-html.compact #announce { top: 62px; padding: 6px 14px; font-size: 15px; max-width: 560px; }
+html.compact .trick-card[data-seat="0"] { transform: translate(-50%, 14px); }
+html.compact .trick-card[data-seat="1"] { transform: translate(64px, -50%) rotate(90deg); }
+html.compact .trick-card[data-seat="2"] { transform: translate(-50%, calc(-100% - 14px)); }
+html.compact .trick-card[data-seat="3"] { transform: translate(calc(-100% - 64px), -50%) rotate(-90deg); }
+/* Announce parks top-left (opposite the partner column), waiting-note bottom-right:
+   neither covers any played card, seat hands, or the HUD strip. */
+html.compact #announce { top: 62px; left: 14px; transform: none; text-align: left; padding: 6px 14px; font-size: 15px; max-width: 270px; }
 html.compact #action-bar { bottom: calc(var(--card-h-h) + 86px); gap: 6px; }
+html.compact #action-bar.wait-note { left: auto; right: 14px; transform: none; bottom: 10px; }
+html.compact #action-bar.wait-note .panel { padding: 6px 12px; }
+html.compact #action-bar.wait-note .panel-note { font-size: 14px; max-width: none; white-space: nowrap; }
 html.compact .panel { padding: 8px 10px; gap: 6px; }
 html.compact .panel-title { font-size: 15px; }
 html.compact .panel-note { font-size: 14px; max-width: 430px; text-align: center; }
@@ -706,6 +719,13 @@ html.compact #rules-close-btn, html.compact #next-hand-btn, html.compact #play-a
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Instant speed (HUD menu): same pacing, animations collapsed to zero like reduced-motion. */
+html.instant *, html.instant *::before, html.instant *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* Portrait phones can't fit the landscape table — ask for rotation instead

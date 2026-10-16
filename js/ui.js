@@ -224,9 +224,11 @@ export function placeTrickCard(seat, id) {
   return wrap;
 }
 
-/** Fly a face-up copy of the trick card to the winner's pile (no flip; cards stay readable). */
-export function collectTrick(node, winnerSeat) {
+/** Fly a face-up copy of the trick card to the winner's pile (no flip; cards stay readable).
+ *  flyMs ≤ 0 (Instant speed) skips the animation entirely. */
+export function collectTrick(node, winnerSeat, flyMs = 480) {
   return new Promise((resolve) => {
+    if (flyMs <= 0) { node.remove(); resolve(); return; }
     const rect = node.getBoundingClientRect();
     const pile = document.querySelector(`[data-pile="${winnerSeat}"]`);
     const target = pile.getBoundingClientRect();
@@ -248,7 +250,7 @@ export function collectTrick(node, winnerSeat) {
       clone.remove();
       node.remove();
       resolve();
-    }, 480);
+    }, flyMs);
   });
 }
 
@@ -286,7 +288,9 @@ export function resetTrickLog() {
 const bar = () => $('action-bar');
 
 export function clearActions() {
-  bar().textContent = '';
+  const b = bar();
+  b.textContent = '';
+  b.classList.remove('wait-note');
 }
 
 function panel() {
@@ -297,6 +301,7 @@ function panel() {
 
 export function showWaitNote(text) {
   clearActions();
+  bar().classList.add('wait-note');   // compact CSS parks the note beside the table, off the played cards
   const p = panel();
   const note = document.createElement('p');
   note.className = 'panel-note';
