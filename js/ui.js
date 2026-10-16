@@ -200,6 +200,27 @@ export function updateHud(snap) {
     trumpBadge.textContent = '';
   }
   updateSeatTags(snap);
+  updateContractProgress(snap);
+}
+
+/* Live tracker: counters the declaring team has banked in tricks so far vs its bid.
+ * Derived straight from snap.countersBySeat (engine state) — never a second tally.
+ * (Nest capture only lands at settlement, so it is intentionally not counted here.) */
+function updateContractProgress(snap) {
+  const prog = $('contract-progress');
+  const c = snap.contract;
+  if (!c || (snap.phase !== 'playing' && snap.phase !== 'contract_setup')) {
+    prog.classList.add('hidden');
+    return;
+  }
+  const team = c.seat % 2;                       // teamOf() in engine.js: seats 0&2 vs 1&3
+  const pts = snap.countersBySeat.reduce((n, v, seat) => n + (seat % 2 === team ? v : 0), 0);
+  const label = team === 0 ? 'Your team' : 'Opponents';
+  const made = pts >= c.bid;
+  $('progress-text').textContent = `${label} ${pts}/${c.bid}${made ? ' — made it!' : ''}`;
+  $('progress-fill').style.width = `${Math.min(100, c.bid > 0 ? (pts / c.bid) * 100 : 0)}%`;
+  prog.classList.toggle('met', made);
+  prog.classList.remove('hidden');
 }
 
 /* ------------------------------------------------------------- trick area */

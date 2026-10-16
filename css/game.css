@@ -75,7 +75,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
-  max-width: 640px;
+  max-width: 560px;   /* kept clear of the contract-progress pill parked top-right */
   padding: 10px 22px;
   border-radius: 10px;
   border: 2px solid var(--gold-dim);
@@ -85,6 +85,50 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   font-weight: 700;
   text-align: center;
 }
+
+/* ------------------------------------------- live contract progress tracker */
+
+#contract-progress {
+  position: absolute;
+  bottom: 18px;        /* desktop scene: felt's bottom-right corner is the empty zone (announce runs top-center, hand sits bottom-center) */
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 2px solid var(--gold-dim);
+  background: linear-gradient(180deg, #3d2c16f2, #241708f2);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55), inset 0 1px 0 #ffffff22;
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 18px;
+}
+#contract-progress .progress-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.progress-bar {
+  width: 120px;
+  height: 10px;
+  border-radius: 6px;
+  background: #00000077;
+  border: 1px solid #00000088;
+  overflow: hidden;
+}
+.progress-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  transition: width 0.35s ease;
+}
+#contract-progress.met { color: #9fe0ac; border-color: #57b06b; }
+#contract-progress.met .progress-fill { background: linear-gradient(90deg, #3f8a52, #9fe0ac); }
 
 /* ------------------------------------------------------------------ table */
 
@@ -679,6 +723,9 @@ html.compact .trick-card[data-seat="3"] { transform: translate(calc(-100% - 64px
 /* Announce parks top-left (opposite the partner column), waiting-note bottom-right:
    neither covers any played card, seat hands, or the HUD strip. */
 html.compact #announce { top: 62px; left: 14px; transform: none; text-align: left; padding: 6px 14px; font-size: 15px; max-width: 270px; }
+html.compact #contract-progress { top: 62px; right: 14px; bottom: auto; padding: 6px 12px; font-size: 14px; gap: 8px; }
+html.compact #contract-progress .progress-label { display: none; }
+html.compact .progress-bar { width: 84px; height: 8px; }
 html.compact #action-bar { bottom: calc(var(--card-h-h) + 86px); gap: 6px; }
 html.compact #action-bar.wait-note { left: auto; right: 14px; transform: none; bottom: 10px; }
 html.compact #action-bar.wait-note .panel { padding: 6px 12px; }

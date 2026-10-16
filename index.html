@@ -11,6 +11,11 @@
   <div class="stage">
     <div class="table-wrap">
       <div id="announce" role="status" aria-live="polite">Welcome to the Rook table.</div>
+      <div id="contract-progress" class="hidden" role="status" aria-live="polite">
+        <span class="progress-label">contract</span>
+        <span id="progress-text">0/0</span>
+        <span class="progress-bar"><span class="progress-fill" id="progress-fill"></span></span>
+      </div>
 
       <div class="table" aria-label="Rook table">
         <!-- top: partner (seat 2) -->
@@ -98,7 +103,7 @@
         <p><b>The nest.</b> The winning bidder takes the 5 nest cards into hand, discards 5 cards face down, then names the trump color. Those discards aren't lost: whoever takes the hand's last trick captures whatever counters sit in the nest.</p>
         <p><b>Play.</b> 13 tricks. The player left of the dealer leads, and everyone else must follow the color led if they can. Highest card of the led color wins — unless a trump is played (legal when you can't follow): trump beats every other color, and the Bird is the highest trump of all. The trick's winner leads the next trick.</p>
         <p><b>Scoring.</b> Your team's hand = the counters in the tricks you took, plus any captured nest. If the bidding team makes its contract, it adds everything it took; fall short instead and the bidding team loses its bid from the score while the other team still adds its own points.</p>
-        <p><b>Tip.</b> The panel under the table always offers exactly your legal moves, and the golden tag on a card shows what it's worth.</p>
+        <p><b>Tip.</b> The panel under the table always offers exactly your legal moves, and the golden tag on a card shows what it's worth. Once the auction ends, the <b>Contract</b> pill at the top of the table tracks how many points your side has banked toward making the bid.</p>
       </div>
       <button id="rules-close-btn" class="btn" type="button">Back to the table</button>
     </div>
