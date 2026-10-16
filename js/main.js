@@ -16,6 +16,7 @@ const FAST = PARAMS.has('fast');           // ~80 ms AI pacing, ~10 ms deal stag
 const rawSeed = PARAMS.has('seed') ? Number(PARAMS.get('seed')) : null;
 const SEED = rawSeed !== null && Number.isFinite(rawSeed) ? rawSeed : null;
 const AI_MS = FAST ? 80 : 700;             // pause between any two AI decisions
+const TRICK_LINGER = FAST ? 700 : 1700;    // all four played cards stay face-up on the table this long
 const DEAL_STAGGER = FAST ? 10 : 40;       // deal stagger in ms/card
 const DEAL_TOTAL = 13 * DEAL_STAGGER + 320; // deal stagger + tail
 
@@ -301,10 +302,13 @@ function resolveTrick(winner) {
   busy = true;
   const nodes = trickNodes.slice();
   trickNodes = [];
-  Promise.all(nodes.map((n) => UI.collectTrick(n, winner))).then(() => {
-    busy = false;
-    advance();
-  });
+  // Linger: keep all four cards visible face-up long enough to read the whole trick.
+  setTimeout(() => {
+    Promise.all(nodes.map((n) => UI.collectTrick(n, winner))).then(() => {
+      busy = false;
+      advance();
+    });
+  }, TRICK_LINGER);
 }
 
 /* --------------------------------------------------------- human actions */
@@ -470,6 +474,26 @@ document.getElementById('mute-btn').addEventListener('click', () => {
   if (!muted) Sfx.flip();
 });
 UI.setMuteButton(Sfx.isMuted());
+
+/* rules dialog — opens with the game paused (busy), resumes on close */
+const rulesEl = document.getElementById('rules');
+const rulesCloseBtn = document.getElementById('rules-close-btn');
+let rulesClaimedBusy = false;
+const openRules = () => {
+  if (!rulesEl.classList.contains('hidden')) return;
+  rulesClaimedBusy = !busy;          // don't co-opt an in-flight trick/animation pause
+  if (rulesClaimedBusy) busy = true;
+  rulesEl.classList.remove('hidden');
+  rulesCloseBtn.focus();
+};
+const closeRules = () => {
+  if (rulesEl.classList.contains('hidden')) return;
+  rulesEl.classList.add('hidden');
+  if (rulesClaimedBusy) { busy = false; rulesClaimedBusy = false; advance(); }
+};
+document.getElementById('rules-btn').addEventListener('click', openRules);
+rulesCloseBtn.addEventListener('click', closeRules);
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRules(); });
 
 document.getElementById('play-again-btn').addEventListener('click', () => {
   UI.hideOverlays();

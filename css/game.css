@@ -253,7 +253,7 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
   transform-style: preserve-3d;
   transition: transform 0.4s ease;
 }
-.card--flipped .card-inner { transform: rotateY(180deg); }
+.card--flipped .card-inner { transform: rotateY(180deg); } /* kept for any future use; trick collection stays face-up */
 
 .card-face, .card-back3d { backface-visibility: hidden; }
 
@@ -604,6 +604,10 @@ html, body { height: 100%; overflow: hidden; background: #171310; }
 }
 .overlay-title { margin: 0 0 16px; font-size: 30px; color: var(--gold); }
 .overlay-win { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 70px rgba(255, 215, 94, 0.45); }
+
+.rules-body { text-align: left; font-size: 18px; line-height: 1.45; color: var(--text); margin-bottom: 14px; }
+.rules-body p { margin: 0 0 12px; }
+.rules-body b { color: var(--gold); }
 
 .settle-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
 .settle-table th, .settle-table td {

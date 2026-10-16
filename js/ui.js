@@ -224,34 +224,31 @@ export function placeTrickCard(seat, id) {
   return wrap;
 }
 
-/** 3D flip (face -> back) then fly a copy to the winner's pile. */
+/** Fly a face-up copy of the trick card to the winner's pile (no flip; cards stay readable). */
 export function collectTrick(node, winnerSeat) {
   return new Promise((resolve) => {
-    node.classList.add('card--flipped');
+    const rect = node.getBoundingClientRect();
+    const pile = document.querySelector(`[data-pile="${winnerSeat}"]`);
+    const target = pile.getBoundingClientRect();
+    const clone = node.cloneNode(true);
+    clone.classList.add('card--fly');
+    clone.style.left = `${rect.left}px`;
+    clone.style.top = `${rect.top}px`;
+    clone.style.width = `${rect.width}px`;
+    clone.style.height = `${rect.height}px`;
+    clone.style.transform = 'none';
+    document.body.appendChild(clone);
+    requestAnimationFrame(() => {
+      const dx = target.left + target.width / 2 - (rect.left + rect.width / 2);
+      const dy = target.top + target.height / 2 - (rect.top + rect.height / 2);
+      clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.32)`;
+      clone.style.opacity = '0.35';
+    });
     setTimeout(() => {
-      const rect = node.getBoundingClientRect();
-      const pile = document.querySelector(`[data-pile="${winnerSeat}"]`);
-      const target = pile.getBoundingClientRect();
-      const clone = node.cloneNode(true);
-      clone.classList.add('card--fly');
-      clone.style.left = `${rect.left}px`;
-      clone.style.top = `${rect.top}px`;
-      clone.style.width = `${rect.width}px`;
-      clone.style.height = `${rect.height}px`;
-      clone.style.transform = 'none';
-      document.body.appendChild(clone);
-      requestAnimationFrame(() => {
-        const dx = target.left + target.width / 2 - (rect.left + rect.width / 2);
-        const dy = target.top + target.height / 2 - (rect.top + rect.height / 2);
-        clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.32)`;
-        clone.style.opacity = '0.15';
-      });
-      setTimeout(() => {
-        clone.remove();
-        node.remove();
-        resolve();
-      }, 480);
-    }, 420);
+      clone.remove();
+      node.remove();
+      resolve();
+    }, 480);
   });
 }
 
@@ -474,6 +471,7 @@ export function showWinner(winner, snap) {
 export function hideOverlays() {
   $('settlement').classList.add('hidden');
   $('winner').classList.add('hidden');
+  $('rules').classList.add('hidden');
 }
 
 /* ------------------------------------------------------------ mute toggle */

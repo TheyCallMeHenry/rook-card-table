@@ -65,6 +65,7 @@
       <h2 class="hud-sub">Last tricks</h2>
       <ol id="trick-log" class="trick-log" aria-label="Last three trick results"></ol>
       <button id="mute-btn" class="btn btn-ghost btn-mute" type="button" aria-pressed="false">Sound: on</button>
+      <button id="rules-btn" class="btn btn-ghost btn-mute" type="button" aria-haspopup="dialog">How to play</button>
       <p class="hud-hint">Tip: golden pips mark counter cards (5s, 10s, 14s, bird = points).</p>
     </aside>
   </div>
@@ -82,6 +83,23 @@
       <h2 class="overlay-title" id="winner-title">Game over</h2>
       <div id="winner-body"></div>
       <button id="play-again-btn" class="btn" type="button">Play again</button>
+    </div>
+  </div>
+
+  <div id="rules" class="overlay hidden" role="dialog" aria-modal="true" aria-label="How to play Rook">
+    <div class="overlay-panel">
+      <h2 class="overlay-title">How to play</h2>
+      <div class="rules-body">
+        <p><b>Teams.</b> You and your partner (at the top) play as a team against the two opponents. Score carries across hands — the first team to <b>150</b> wins the game.</p>
+        <p><b>Cards.</b> 57 cards: four colors (red, yellow, green, black) with numbers 1–14 — high beats low — plus the <b>Bird</b>. Counter cards: a 5 is worth 5, a 10 or 14 is worth 10, the Bird is worth 20. That's 120 points in every deal.</p>
+        <p><b>Deal.</b> Each player gets 13 cards; the last 5 form the <b>nest</b>, face down on the table. Before bidding, if your hand holds no counter cards at all, you may demand one redeal.</p>
+        <p><b>Bidding.</b> Starting left of the dealer, each player bids or passes. Bids start at 70, go up in steps of 5, and can reach 200. The last player standing wins the contract — that player must take at least that many points this hand. If everyone passes, the dealer must play 70.</p>
+        <p><b>The nest.</b> The winning bidder takes the 5 nest cards into hand, discards 5 cards face down, then names the trump color. Those discards aren't lost: whoever takes the hand's last trick captures whatever counters sit in the nest.</p>
+        <p><b>Play.</b> 13 tricks. The player left of the dealer leads, and everyone else must follow the color led if they can. Highest card of the led color wins — unless a trump is played (legal when you can't follow): trump beats every other color, and the Bird is the highest trump of all. The trick's winner leads the next trick.</p>
+        <p><b>Scoring.</b> Your team's hand = the counters in the tricks you took, plus any captured nest. If the bidding team makes its contract, it adds everything it took; fall short instead and the bidding team loses its bid from the score while the other team still adds its own points.</p>
+        <p><b>Tip.</b> The panel under the table always offers exactly your legal moves, and the golden tag on a card shows what it's worth.</p>
+      </div>
+      <button id="rules-close-btn" class="btn" type="button">Back to the table</button>
     </div>
   </div>
 
