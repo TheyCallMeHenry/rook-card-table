@@ -46,7 +46,9 @@ function cardFaceInner(id) {
   const pts = cardCounters(parsed);
   const cornerText = isBird ? svgSuit('BIRD') : `<span class="rank">${parsed.rank}</span>${svgSuit(parsed.suit)}`;
   const big = isBird ? svgSuit('BIRD') : svgSuit(parsed.suit);
-  return `<span class="card-inner"><span class="card-face"><span class="corner">${cornerText}</span><span class="glyph">${big}</span>${pts > 0 ? `<span class="counter-tag">${pts}</span>` : ''}</span><span class="card-back3d"></span></span>`;
+  // Suit color lives on card-inner so EVERY consumer (hand, tricks, any future surface)
+  // gets rank/glyph color even when the outer wrapper lacks an s-<suit> class.
+  return `<span class="card-inner s-${parsed.suit}"><span class="card-face"><span class="corner">${cornerText}</span><span class="glyph">${big}</span>${pts > 0 ? `<span class="counter-tag">${pts}</span>` : ''}</span><span class="card-back3d"></span></span>`;
 }
 
 /**
